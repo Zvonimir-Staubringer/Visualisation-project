@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="hr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vizualizacija stanovništva po županijama</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">SVG + D3 interaktivna vizualizacija</p>
+          <h1>Stanovništvo Hrvatske po županijama</h1>
+          <p class="hero-text">
+            Kartogram povezuje kartu, linijski graf, pie chart i stupčasti graf u jedan
+            interaktivni prikaz. Godinu možeš mijenjati ručno ili kroz animaciju, a klik
+            na županije otvara usporedbu kroz više grafova.
+          </p>
+        </div>
+
+        <div class="hero-badges" id="heroBadges"></div>
+      </header>
+
+      <main class="main-layout">
+        <aside class="panel controls-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Filteri</p>
+            <h2>Upravljanje prikazom</h2>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="metricTabs">Metoda prikaza</label>
+            <div id="metricTabs" class="metric-tabs" role="tablist" aria-label="Odabir metrike">
+              <button class="metric-tab is-active" data-metric="population" type="button">
+                Stanovništvo
+              </button>
+              <button class="metric-tab" data-metric="naturalChange" type="button">
+                Prirodna kretanja
+              </button>
+              <button class="metric-tab" data-metric="migrationBalance" type="button">
+                Saldo migracije
+              </button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-row">
+              <label class="control-label" for="yearRange">Godina</label>
+              <span class="year-pill" id="yearValue">2024</span>
+            </div>
+            <input id="yearRange" class="year-range" type="range" min="2001" max="2024" step="1" value="2024" />
+            <div class="control-row compact">
+              <button id="playPauseButton" class="ghost-button" type="button">Pokreni animaciju</button>
+              <button id="resetSelectionButton" class="ghost-button" type="button">Očisti odabir</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="sortSelect">Sortiranje stupčastog grafa</label>
+            <select id="sortSelect" class="select-input">
+              <option value="value-desc">Po vrijednosti silazno</option>
+              <option value="value-asc">Po vrijednosti uzlazno</option>
+              <option value="name-asc">Abecedno</option>
+            </select>
+          </div>
+
+          <div class="info-box">
+            <h3>Interakcije</h3>
+            <p>
+              Prelazak mišem prikazuje tooltip i animira županiju. Klik dodaje županiju u
+              usporedbu, a zadnja kliknuta županija postaje fokus za pie chart i sažetak.
+            </p>
+          </div>
+
+          <div class="selection-box">
+            <div class="control-row">
+              <h3>Odabrane županije</h3>
+              <span id="selectionCount" class="selection-count">0 / 3</span>
+            </div>
+            <div id="selectedCounties" class="selected-counties"></div>
+          </div>
+        </aside>
+
+        <section class="panel map-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Početni prikaz</p>
+            <h2>Kartogram Hrvatske po županijama</h2>
+            <p class="section-text">
+              Boja svake županije ovisi o odabranoj metrici i godini. Klikom na županiju
+              otvaraju se povezani grafovi ispod karte.
+            </p>
+          </div>
+
+          <div class="map-toolbar">
+            <div>
+              <span class="toolbar-label">Legenda</span>
+              <div id="legendLabel" class="legend-label">Stanovništvo u 2024.</div>
+            </div>
+            <div class="toolbar-note" id="toolbarNote">Prikazane su sve 21 županije.</div>
+          </div>
+
+          <svg id="legendSvg" class="legend-svg" viewBox="0 0 420 68" aria-label="Legenda boja"></svg>
+
+          <div class="map-stage">
+            <svg id="mapSvg" class="map-svg" viewBox="0 0 1060 940" aria-label="Interaktivna karta Hrvatske"></svg>
+          </div>
+        </section>
+      </main>
+
+      <section id="detailsPanel" class="details-panel is-hidden">
+        <div class="details-header panel">
+          <div>
+            <p class="eyebrow">Povezani grafovi</p>
+            <h2 id="detailsTitle">Odaberi županiju na karti</h2>
+            <p id="detailsSubtitle" class="section-text">
+              Nakon klika prikazuju se detalji i usporedba kroz više grafova.
+            </p>
+          </div>
+          <div id="summaryCards" class="summary-cards"></div>
+        </div>
+
+        <div class="charts-grid">
+          <article class="panel chart-card line-card">
+            <div class="chart-copy">
+              <h3>Linijski graf kretanja stanovništva</h3>
+              <p>Linije prate odabrane županije i omogućuju izravnu usporedbu kroz godine.</p>
+            </div>
+            <svg id="lineChartSvg" class="chart-svg" viewBox="0 0 760 380"></svg>
+          </article>
+
+          <article class="panel chart-card pie-card">
+            <div class="chart-copy">
+              <h3>Pie chart dobnih skupina</h3>
+              <p id="pieChartNote">Dobne skupine: djeca, mladi, srednja dob i stariji.</p>
+            </div>
+            <div class="pie-layout">
+              <svg id="pieChartSvg" class="chart-svg" viewBox="0 0 420 320"></svg>
+              <div id="pieLegend" class="pie-legend"></div>
+            </div>
+          </article>
+
+          <article class="panel chart-card bar-card">
+            <div class="chart-copy">
+              <h3>Stupčasti graf županija</h3>
+              <p>
+                Graf se ažurira prema odabranoj metrici i godini. Klik na stupac odabire
+                istu županiju kao i klik na karti.
+              </p>
+            </div>
+            <svg id="barChartSvg" class="chart-svg tall" viewBox="0 0 760 700"></svg>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer-note">
+        Izvor podataka: Državni zavod za statistiku Republike Hrvatske, datoteka
+        <span class="file-ref">stanovnistvo-pregled-po-zupanijama.xlsx</span>.
+      </footer>
+    </div>
+
+    <div id="tooltip" class="tooltip" role="status" aria-live="polite"></div>
+
+    <script src="vendor/d3.min.js"></script>
+    <script src="data/population-data.js"></script>
+    <script src="data/croatia-counties-topology.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
