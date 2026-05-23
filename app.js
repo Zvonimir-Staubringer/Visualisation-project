@@ -82,6 +82,7 @@
     .filter((county) => county.feature);
 
   const countyById = new Map(counties.map((county) => [county.id, county]));
+  const croatiaAggregate = buildCroatiaAggregate();
   const croatiaFeatureCollection = {
     type: "FeatureCollection",
     features: counties.map((county) => county.feature),
@@ -144,7 +145,7 @@
 
   const lineRoot = svg.line.append("g").attr("transform", "translate(70, 30)");
   const pieRoot = svg.pie.append("g").attr("transform", "translate(165, 164)");
-  const barRoot = svg.bar.append("g").attr("transform", "translate(160, 40)");
+  const barRoot = svg.bar.append("g").attr("transform", "translate(190, 40)");
 
   document.querySelectorAll(".metric-tab").forEach((button) => {
     button.addEventListener("click", () => {
@@ -436,9 +437,8 @@
   }
 
   function renderDetails() {
-    const activeCounty = getActiveCounty();
-    const hasSelection = state.selectedIds.length > 0;
-    elements.detailsPanel.classList.toggle("is-hidden", !hasSelection);
+    const activeCounty = getDetailsSubject();
+    elements.detailsPanel.classList.remove("is-hidden");
 
     if (!activeCounty) {
       return;
@@ -447,9 +447,21 @@
     elements.detailsTitle.textContent =
       state.selectedIds.length > 1
         ? `${activeCounty.name} je fokus, a grafovi uspoređuju ${state.selectedIds.length} županije`
-        : `${activeCounty.name} u fokusu`;
+        : state.selectedIds.length === 1
+          ? `${activeCounty.name} u fokusu`
+          : "Hrvatska u fokusu";
 
     elements.detailsSubtitle.textContent = `${metricMeta[state.metric].label} za ${state.year}. uz povezani pregled stanovništva, dobnih skupina i rangiranja županija.`;
+
+    elements.detailsSubtitle.textContent =
+      state.selectedIds.length > 0
+        ? `${metricMeta[state.metric].label} za ${state.year}. uz povezani pregled stanovniĹˇtva, dobnih skupina i rangiranja Ĺľupanija.`
+        : `${metricMeta[state.metric].label} za ${state.year}. PoÄŤetni prikaz pokazuje cijelu Hrvatsku, a klik na Ĺľupaniju aĹľurira povezane grafove.`;
+
+    elements.detailsSubtitle.textContent =
+      state.selectedIds.length > 0
+        ? `${metricMeta[state.metric].label} za ${state.year}. uz povezani pregled stanovnistva, dobnih skupina i rangiranja zupanija.`
+        : `${metricMeta[state.metric].label} za ${state.year}. Pocetni prikaz pokazuje cijelu Hrvatsku, a klik na zupaniju azurira povezane grafove.`;
 
     const summaryData = [
       {
@@ -485,14 +497,15 @@
   function renderLineChart() {
     lineRoot.selectAll("*").remove();
 
-    if (state.selectedIds.length === 0) {
+    if (state.selectedIds.length === 0 && !croatiaAggregate) {
       drawEmptyState(lineRoot, 300, 160, "Linijski graf čeka odabir županije.");
       return;
     }
 
     const selectedCounties = state.selectedIds.map((id) => countyById.get(id)).filter(Boolean);
+    const comparisonEntries = selectedCounties.length > 0 ? selectedCounties : [croatiaAggregate];
     const years = metricMeta.population.years;
-    const series = selectedCounties.map((county) => ({
+    const series = comparisonEntries.map((county) => ({
       county,
       values: years.map((year) => ({
         year,
@@ -500,7 +513,7 @@
       })),
     }));
 
-    const width = 640;
+    const width = 540;
     const height = 300;
     const allValues = series.flatMap((entry) => entry.values.map((value) => value.value));
 
@@ -576,14 +589,14 @@
       .join("text")
       .attr("class", "line-end-label")
       .attr("fill", (d) => comparisonColors(d.county.id))
-      .attr("x", width + 8)
+      .attr("x", width + 14)
       .attr("y", (d) => y(d.values.at(-1).value) + 4)
       .text((d) => d.county.name);
   }
 
   function renderPieChart() {
     pieRoot.selectAll("*").remove();
-    const activeCounty = getActiveCounty();
+    const activeCounty = getDetailsSubject();
 
     if (!activeCounty) {
       drawEmptyState(pieRoot, 0, 0, "Pie chart čeka fokusnu županiju.");
@@ -679,7 +692,7 @@
       .filter((entry) => entry.value !== null);
 
     const sortedValues = [...values].sort((left, right) => sortEntries(left, right, state.sortMode));
-    const width = 560;
+    const width = 520;
     const height = 600;
     const y = d3
       .scaleBand()
@@ -744,9 +757,21 @@
       .selectAll(".bar-value")
       .data(sortedValues, (d) => d.county.id)
       .join("text")
-      .attr("class", "bar-value")
-      .attr("x", (d) => (d.value >= 0 ? x(d.value) + 6 : x(d.value) - 6))
-      .attr("text-anchor", (d) => (d.value >= 0 ? "start" : "end"))
+      .attr("class", (d) => `bar-value${Math.abs(x(d.value) - x(0)) >= 60 ? " is-inside" : ""}`)
+      .attr("x", (d) => {
+        const barLength = Math.abs(x(d.value) - x(0));
+        if (barLength >= 60) {
+          return d.value >= 0 ? x(d.value) - 10 : x(d.value) + 10;
+        }
+        return d.value >= 0 ? x(d.value) + 8 : x(d.value) - 8;
+      })
+      .attr("text-anchor", (d) => {
+        const barLength = Math.abs(x(d.value) - x(0));
+        if (barLength >= 60) {
+          return d.value >= 0 ? "end" : "start";
+        }
+        return d.value >= 0 ? "start" : "end";
+      })
       .attr("y", (d) => y(d.county.id) + y.bandwidth() / 2 + 4)
       .text((d) => metricMeta[state.metric].formatter(d.value));
   }
@@ -795,6 +820,10 @@
   function getActiveCounty() {
     const focusId = state.focusId || state.selectedIds.at(-1);
     return focusId ? countyById.get(focusId) : null;
+  }
+
+  function getDetailsSubject() {
+    return getActiveCounty() || croatiaAggregate;
   }
 
   function getMetricValue(county, metricKey, year) {
@@ -919,6 +948,45 @@
       return "—";
     }
     return `${metricMeta[state.metric].formatter(Math.round(extent[0]))} do ${metricMeta[state.metric].formatter(Math.round(extent[1]))}`;
+  }
+
+  function buildCroatiaAggregate() {
+    return {
+      id: "croatia",
+      name: "Hrvatska",
+      nameEn: "Croatia",
+      shortCode: "HR",
+      metrics: {
+        population: buildAggregatedMetricSeries("population"),
+        naturalChange: buildAggregatedMetricSeries("naturalChange"),
+        migrationBalance: buildAggregatedMetricSeries("migrationBalance"),
+      },
+      ageComposition: buildAggregatedAgeComposition(),
+    };
+  }
+
+  function buildAggregatedMetricSeries(metricKey) {
+    return Object.fromEntries(
+      dataset.years[metricKey].map((year) => [
+        String(year),
+        d3.sum(counties, (county) => getMetricValue(county, metricKey, year) || 0),
+      ])
+    );
+  }
+
+  function buildAggregatedAgeComposition() {
+    return Object.fromEntries(
+      dataset.years.ageComposition.map((year) => [
+        String(year),
+        Object.keys(dataset.ageBuckets).reduce((accumulator, key) => {
+          accumulator[key] = d3.sum(
+            counties,
+            (county) => getMetricValue(county, "ageComposition", year)?.[key] || 0
+          );
+          return accumulator;
+        }, {}),
+      ])
+    );
   }
 
   function findShortCode(countyId) {

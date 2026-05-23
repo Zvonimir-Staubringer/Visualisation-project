@@ -10,12 +10,10 @@
     <div class="page-shell">
       <header class="hero panel">
         <div class="hero-copy">
-          <p class="eyebrow">SVG + D3 interaktivna vizualizacija</p>
+          <p class="eyebrow">Vizualizacija projekt - Stanovništvo Hrvatske po županijama</p>
           <h1>Stanovništvo Hrvatske po županijama</h1>
           <p class="hero-text">
-            Kartogram povezuje kartu, linijski graf, pie chart i stupčasti graf u jedan
-            interaktivni prikaz. Godinu možeš mijenjati ručno ili kroz animaciju, a klik
-            na županije otvara usporedbu kroz više grafova.
+            Stisni na županiju na karti da vidiš detalje i usporedbu kroz više grafova. Odaberi različite metrike i godine da istražiš kretanja stanovništva kroz vrijeme. Pokreni animaciju da vidiš promjene kroz godine.
           </p>
         </div>
 
@@ -68,8 +66,8 @@
           <div class="info-box">
             <h3>Interakcije</h3>
             <p>
-              Prelazak mišem prikazuje tooltip i animira županiju. Klik dodaje županiju u
-              usporedbu, a zadnja kliknuta županija postaje fokus za pie chart i sažetak.
+              Odabirom županije na karti dodaje se u usporedbu. Odabrane županije ostaju istaknute i u povezanim grafovima. 
+              Klikom na istu županiju uklanja se iz usporedbe. Uspoređuje se do 3 županije istovremeno.
             </p>
           </div>
 
@@ -86,10 +84,10 @@
           <div class="section-heading">
             <p class="eyebrow">Početni prikaz</p>
             <h2>Kartogram Hrvatske po županijama</h2>
-            <p class="section-text">
+            <!-- <p class="section-text">
               Boja svake županije ovisi o odabranoj metrici i godini. Klikom na županiju
               otvaraju se povezani grafovi ispod karte.
-            </p>
+            </p> -->
           </div>
 
           <div class="map-toolbar">
@@ -108,7 +106,7 @@
         </section>
       </main>
 
-      <section id="detailsPanel" class="details-panel is-hidden">
+      <section id="detailsPanel" class="details-panel">
         <div class="details-header panel">
           <div>
             <p class="eyebrow">Povezani grafovi</p>
@@ -124,7 +122,7 @@
           <article class="panel chart-card line-card">
             <div class="chart-copy">
               <h3>Linijski graf kretanja stanovništva</h3>
-              <p>Linije prate odabrane županije i omogućuju izravnu usporedbu kroz godine.</p>
+              <p>Vidljivo je kretanje stanovništva odabrane županije i omogućuju izravnu usporedbu kroz godine.</p>
             </div>
             <svg id="lineChartSvg" class="chart-svg" viewBox="0 0 760 380"></svg>
           </article>
@@ -144,8 +142,8 @@
             <div class="chart-copy">
               <h3>Stupčasti graf županija</h3>
               <p>
-                Graf se ažurira prema odabranoj metrici i godini. Klik na stupac odabire
-                istu županiju kao i klik na karti.
+                Usporedba odabrane županije s ostalima. Prikazuje se ukupno stanovništvo ili odabrana metrika za sve 
+                županije u odabranoj godini. Klikom na stupac druge županije ažuriraju se svi grafovi.
               </p>
             </div>
             <svg id="barChartSvg" class="chart-svg tall" viewBox="0 0 760 700"></svg>

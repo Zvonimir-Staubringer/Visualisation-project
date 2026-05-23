@@ -378,6 +378,7 @@ h3 {
   display: grid;
   grid-template-columns: 1.3fr 0.9fr;
   gap: 24px;
+  align-items: start;
 }
 
 .line-card {
@@ -386,6 +387,8 @@ h3 {
 
 .pie-card {
   grid-column: 2 / 3;
+  align-self: start;
+  gap: 12px;
 }
 
 .bar-card {
@@ -410,7 +413,11 @@ h3 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 150px;
   gap: 18px;
-  align-items: center;
+  align-items: start;
+}
+
+.pie-card .chart-copy {
+  gap: 4px;
 }
 
 .pie-legend {
@@ -590,6 +597,10 @@ h3 {
   font-size: 11px;
   fill: var(--text);
   font-weight: 700;
+}
+
+.bar-value.is-inside {
+  fill: rgba(255, 251, 245, 0.98);
 }
 
 .empty-chart-text {
